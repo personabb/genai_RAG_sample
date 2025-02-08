@@ -10,25 +10,38 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
-from langchain.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader
 from langchain_core.documents import Document
 
 import os
+import glob
 
 os.makedirs("chroma", exist_ok=True)
 
+def load_text_files_from_folder(folder_path):
+    """
+    指定したフォルダ内のすべてのテキストファイル(.txt)を読み込む関数
+    
+    :param folder_path: 読み込むフォルダのパス
+    :return: 読み込んだドキュメントのリスト
+    """
+    # フォルダ内のすべての .txt ファイルを取得
+    text_files = glob.glob(os.path.join(folder_path, "*.txt"))
+
+    # すべてのテキストファイルを読み込む
+    documents = []
+    for file in text_files:
+        loader = TextLoader(file)
+        documents.extend(loader.load())  # 各ファイルの内容をリストに追加
+
+    print(f"Loaded {len(documents)} documents from {folder_path}")
+    return documents  # 読み込んだドキュメントのリストを返す
+
 
 def main():
-    """
-    メイン処理を行う関数。
-    Matching Engine と VertexAIEmbeddings を使い、
-    ドキュメントを読み込んでチャンク分割し、BM25 と dense embedding の両方を作成し、
-    最終的に Vector Search (Matching Engine) に登録する。
-    """
-
-    #EM_MODEL_NAME = "text-multilingual-embedding-002"
+    # --- 定数定義 ---
     EM_MODEL_NAME = "models/text-embedding-004"
-    RAG_FILE = "./inputs/sample.txt"
+    RAG_FOLDER_PATH = "./inputs"
     CHROMA_DB = "./chroma/chroma_langchain_db"
     CHROMA_NAME = "example_collection"
 
@@ -44,16 +57,14 @@ def main():
 
 
     # テキストファイルを読み込む
-    loader = TextLoader(RAG_FILE)
-    document = loader.load()
+    documents = load_text_files_from_folder(RAG_FOLDER_PATH)
 
     # チャンクに分割
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-    doc_splits = text_splitter.split_documents(document)
+    doc_splits = text_splitter.split_documents(documents)
 
     # チャンクのテキスト部分を抽出
     texts = [doc.page_content for doc in doc_splits]
-    print("texts:", texts)
 
     # optional IDs とメタデータ
     ids = ["i_" + str(i + 1) for i in range(len(texts))]
@@ -62,7 +73,8 @@ def main():
         # ---- dense embedding (Vertex AI で生成) ----
     dense_embeddings = embedding_model.embed_documents(texts)
     
-    print("dense embeddings:", dense_embeddings[0])  # 最初の埋め込みを確認
+    # embeddingsの中身を確認
+    print("dense embeddings（一部）:", dense_embeddings[0][:5])  # 最初の埋め込みを確認
     print("dense embeddings length:", len(dense_embeddings))
 
     #https://github.com/langchain-ai/langchain/blob/5d581ba22c68ab46818197da907278c1c45aad41/libs/partners/chroma/langchain_chroma/vectorstores.py#L502
@@ -72,14 +84,14 @@ def main():
         ids=ids,
     )
 
-    print("データの登録が完了しました。")
+    print("\nデータの登録が完了しました。\n")
 
+    #　以下は、chroma DBに保存されたデータの中身を確認するためのコード
     # 全データの取得 (ドキュメントとメタデータだけ取得する例)
     data = vector_store._collection.get(include=["documents", "metadatas"])
 
-
-    print("Documents:", data["documents"])
-    print("Metadatas:", data["metadatas"])
+    print("Documents（3件）:", data["documents"][:3])
+    print("Metadatas（全件）:", data["metadatas"])
 
 if __name__ == "__main__":
     main()
