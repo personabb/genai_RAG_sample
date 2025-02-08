@@ -13,6 +13,10 @@ from langchain_chroma import Chroma
 from langchain.document_loaders import TextLoader
 from langchain_core.documents import Document
 
+import os
+
+os.makedirs("chroma", exist_ok=True)
+
 
 def main():
     """
