@@ -9,10 +9,10 @@ from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 
 from langchain_core.retrievers import BaseRetriever
-from pydantic import SkipValidation, BaseModel
+from pydantic import SkipValidation
 from langgraph.prebuilt import create_react_agent
 
-class VectorSearchRetriever(BaseRetriever, BaseModel):
+class VectorSearchRetriever(BaseRetriever):
     """
     ベクトル検索を行うためのRetrieverクラス。
     """
@@ -79,8 +79,8 @@ def main():
 
     #質問文の例
     query = "16歳未満のユーザーが海外から当社サービスを利用した場合、親権者が同意していないときはどう扱われますか？ そのときデータは国外にも保存される可能性がありますか？"
-    query = "おはよう"
-    query = "今日は12歳の誕生日なんだ。これから初めて海外に行くんだよね"
+    #query = "おはよう"
+    #query = "今日は12歳の誕生日なんだ。これから初めて海外に行くんだよね"
 
 
 
@@ -109,8 +109,8 @@ def main():
     )
 
     tool = dence_retriever.as_tool(
-    name="Document_Search_Tool",
-    description="サービスの規約に関する情報を取得するためのtoolです。"
+        name="Document_Search_Tool",
+        description="サービスの規約に関する情報を取得するためのtoolです。"
     )
 
     
