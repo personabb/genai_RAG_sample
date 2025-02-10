@@ -11,9 +11,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 
 from langchain_core.retrievers import BaseRetriever
-from pydantic import SkipValidation, BaseModel
+from pydantic import SkipValidation
 
-class VectorSearchRetriever(BaseRetriever, BaseModel):
+class VectorSearchRetriever(BaseRetriever):
     """
     ベクトル検索を行うためのRetrieverクラス。
     """
@@ -25,14 +25,14 @@ class VectorSearchRetriever(BaseRetriever, BaseModel):
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(self, query: str) -> List[Document]:
-        # 1. Dense embedding
+        #Dense embedding
         embedding = self.embedding_model.embed_query(query)
         search_results = self.vector_store.similarity_search_by_vector_with_relevance_scores(
             embedding=embedding,
             k=self.k,
         )
 
-        # 4. Document のリストだけ取り出す
+        #Document のリストだけ取り出す
         return [doc for doc, _ in search_results]
 
     async def _aget_relevant_documents(self, query: str) -> List[Document]:
@@ -43,9 +43,13 @@ def main():
     # --- 定数定義 ---
     LLM_MODEL_NAME = "gemini-2.0-flash-001" 
     EM_MODEL_NAME = "models/text-embedding-004"
-    RAG_FILE = "./inputs/sample.txt"
     CHROMA_DB = "./chroma/chroma_langchain_db"
     CHROMA_NAME = "example_collection"
+
+    # 質問文
+    #query = "16歳未満のユーザーが海外から当社サービスを利用した場合、親権者が同意していないときはどう扱われますか？ そのときデータは国外にも保存される可能性がありますか？"
+    #query = "おはよう"
+    query = "今日は12歳の誕生日なんだ。これから初めて海外に行くんだよね"
 
 
    
@@ -66,17 +70,15 @@ def main():
         max_tokens=512,
     )
 
-    # ローカルにあるクエリ（例）
-    #query = "16歳未満のユーザーが海外から当社サービスを利用した場合、親権者が同意していないときはどう扱われますか？ そのときデータは国外にも保存される可能性がありますか？"
-    #query = "おはよう"
-    query = "今日は12歳の誕生日なんだ。これから初めて海外に行くんだよね"
-
+    
     # DenceRetrieverを用意
     dence_retriever = VectorSearchRetriever(
         vector_store=vector_store,
         embedding_model=embedding_model,
         k=5,
     )
+
+    # dence_retriever = vector_store.as_retriever() # search_kwargs={'k': 4}
 
     
     # Prompt 定義
@@ -110,7 +112,7 @@ def main():
     dense_docs = dence_retriever.invoke(query)
     print("\nDenseRetrieved Documents:", dense_docs)
 
-    print("\n================= エージェントの実行結果 =================")
+    print("\n================= LLMの実行結果 =================")
     result = chain.invoke(query)
     print(result)
 

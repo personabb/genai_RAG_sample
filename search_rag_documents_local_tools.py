@@ -24,14 +24,14 @@ class VectorSearchRetriever(BaseRetriever, BaseModel):
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(self, query: str) -> List[Document]:
-        # 1. Dense embedding
+        # Dense embedding
         embedding = self.embedding_model.embed_query(query)
         search_results = self.vector_store.similarity_search_by_vector_with_relevance_scores(
             embedding=embedding,
             k=self.k,
         )
 
-        # 4. Document のリストだけ取り出す
+        # Document のリストだけ取り出す
         return [doc for doc, _ in search_results]
 
     async def _aget_relevant_documents(self, query: str) -> List[Document]:
@@ -74,9 +74,15 @@ def main():
     # --- 定数定義 ---
     LLM_MODEL_NAME = "gemini-2.0-flash-001" 
     EM_MODEL_NAME = "models/text-embedding-004"
-    RAG_FILE = "./inputs/sample.txt"
     CHROMA_DB = "./chroma/chroma_langchain_db"
     CHROMA_NAME = "example_collection"
+
+    #質問文の例
+    query = "16歳未満のユーザーが海外から当社サービスを利用した場合、親権者が同意していないときはどう扱われますか？ そのときデータは国外にも保存される可能性がありますか？"
+    query = "おはよう"
+    query = "今日は12歳の誕生日なんだ。これから初めて海外に行くんだよね"
+
+
 
     # テキスト エンベディング モデルを定義する (dense embedding)
     embedding_model = GoogleGenerativeAIEmbeddings(model=EM_MODEL_NAME)
@@ -94,11 +100,6 @@ def main():
         temperature=0.2,
         max_tokens=512,
     )
-
-    # ローカルにあるクエリ（例）
-    #query = "16歳未満のユーザーが海外から当社サービスを利用した場合、親権者が同意していないときはどう扱われますか？ そのときデータは国外にも保存される可能性がありますか？"
-    #query = "おはよう"
-    query = "今日は12歳の誕生日なんだ。これから初めて海外に行くんだよね"
 
     # DenceRetrieverを用意
     dence_retriever = VectorSearchRetriever(
@@ -123,7 +124,7 @@ toolから情報を取得して回答する場合は、ユーザが一時情報�
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", prompt_template),
-            ('placeholder', '{messages}'),
+            ("human", "{messages}"),
         ]
     )
 

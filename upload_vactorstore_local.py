@@ -1,8 +1,5 @@
-# gcloud auth application-default login
 from typing import Any, Dict, List
 
-
-# --- langchain / external libraries ---
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
@@ -60,7 +57,23 @@ def main():
     documents = load_text_files_from_folder(RAG_FOLDER_PATH)
 
     # チャンクに分割
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500, 
+        chunk_overlap=100,
+        separators=[
+        "\n\n",
+        "\n",
+        " ",
+        ".",
+        ",",
+        "\u200b",  # Zero-width space
+        "\uff0c",  # Fullwidth comma
+        "\u3001",  # Ideographic comma
+        "\uff0e",  # Fullwidth full stop
+        "\u3002",  # Ideographic full stop
+        "",
+    ],)
+
     doc_splits = text_splitter.split_documents(documents)
 
     # チャンクのテキスト部分を抽出
@@ -70,7 +83,7 @@ def main():
     ids = ["i_" + str(i + 1) for i in range(len(texts))]
     metadatas = [{"my_metadata": i} for i in range(len(texts))]
 
-        # ---- dense embedding (Vertex AI で生成) ----
+    # ---- dense embedding ----
     dense_embeddings = embedding_model.embed_documents(texts)
     
     # embeddingsの中身を確認
@@ -88,10 +101,11 @@ def main():
 
     #　以下は、chroma DBに保存されたデータの中身を確認するためのコード
     # 全データの取得 (ドキュメントとメタデータだけ取得する例)
-    data = vector_store._collection.get(include=["documents", "metadatas"])
+    data = vector_store._collection.get(include=["documents", "metadatas","embeddings"])
 
     print("Documents（3件）:", data["documents"][:3])
     print("Metadatas（全件）:", data["metadatas"])
+    print("Embeddings（一部）:", data["embeddings"][0][:5])
 
 if __name__ == "__main__":
     main()
