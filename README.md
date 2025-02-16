@@ -6,4 +6,4 @@ RAGを利用するサンプルコードです。
 
 
 使い方などの詳細は下記の記事をご覧ください。
-（未作成）
+[LangGraphのTool Callingを利用して、RAG Agentsを構築する（前編）](https://zenn.dev/asap/articles/2ad7eb5e7560cf)
